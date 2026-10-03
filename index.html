@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mullerthal Trail · Route 2</title>
+<meta name="description" content="Two-day hike on Mullerthal Trail Route 2, Luxembourg — map and photos along the way.">
+<meta property="og:title" content="Mullerthal Trail · Route 2">
+<meta property="og:description" content="44 km loop in two days — map and photos along the way.">
+<meta property="og:image" content="media/IMG_9266.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M2 26 12 10l6 9 4-5 8 12z' fill='%23fc5200'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="lib/MarkerCluster.css">
+<style>
+:root{
+  --accent:#fc5200; --ink:#1d1d1f; --muted:#6b6b70; --card:rgba(255,255,255,.94);
+  --line:rgba(0,0,0,.08); --shadow:0 2px 12px rgba(0,0,0,.18);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#e8e6e1;color:var(--ink)}
+#map{position:fixed;inset:0;z-index:0}
+.leaflet-container{background:#e8e6e1;font:inherit}
+
+/* header card */
+#info{position:fixed;top:12px;left:12px;z-index:500;background:var(--card);backdrop-filter:blur(8px);
+  border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;max-width:min(340px,calc(100vw - 24px))}
+#info h1{margin:0;font-size:18px;line-height:1.2;letter-spacing:-.01em}
+#info .sub{margin:3px 0 10px;color:var(--muted);font-size:13px}
+#info .stats{display:flex;gap:18px}
+#info .stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+#info .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+#info .legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--muted)}
+#info .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+#info .play{margin-top:12px;width:100%;border:0;border-radius:10px;padding:9px;background:var(--accent);color:#fff;
+  font:600 14px/1 inherit;font-family:inherit;cursor:pointer}
+#info .play:hover{filter:brightness(1.07)}
+
+/* photo markers */
+.ph{width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.4);
+  background:#ccc center/cover no-repeat;position:relative;transition:transform .12s;cursor:pointer}
+.ph:hover{transform:scale(1.12)}
+.ph.vid::after{content:"";position:absolute;inset:0;margin:auto;width:0;height:0;
+  border-left:12px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;
+  filter:drop-shadow(0 0 3px rgba(0,0,0,.6));left:4px}
+.ph .n{position:absolute;top:-6px;right:-8px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;
+  background:var(--accent);color:#fff;font:700 12px/22px inherit;font-family:inherit;text-align:center;border:2px solid #fff}
+.ph.active{outline:3px solid var(--accent);outline-offset:1px}
+.leaflet-marker-icon.wrap{background:none;border:0}
+.pin{width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.hover-dot{width:14px;height:14px;border-radius:50%;background:#fff;border:4px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+/* elevation profile */
+#prof{position:fixed;left:12px;right:12px;bottom:12px;z-index:500;background:var(--card);backdrop-filter:blur(8px);
+  border-radius:14px;box-shadow:var(--shadow);padding:8px 12px 6px;height:130px;transition:height .2s}
+#prof.min{height:34px}
+#prof .hd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);height:20px}
+#prof .hd button{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer;padding:2px 4px}
+#prof svg{display:block;width:100%;height:92px;cursor:crosshair;touch-action:none}
+#prof.min svg{display:none}
+#prof .rd{font-variant-numeric:tabular-nums;color:var(--ink)}
+.leaflet-bottom{bottom:150px}
+body.pmin .leaflet-bottom{bottom:54px}
+.leaflet-top.leaflet-right{top:4px}
+
+/* lightbox */
+#lb{position:fixed;inset:0;z-index:2000;background:rgba(12,12,14,.96);display:none;user-select:none}
+#lb.open{display:block}
+#lb .stage{position:absolute;inset:56px 64px 64px;display:flex;align-items:center;justify-content:center}
+#lb img,#lb video{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#lb img.ph-lo{filter:blur(12px);transform:scale(1.0)}
+#lb .top{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;color:#ddd;font-size:14px}
+#lb .cap b{color:#fff;font-weight:600}
+#lb .btn{border:0;background:rgba(255,255,255,.12);color:#fff;width:48px;height:48px;border-radius:50%;cursor:pointer;z-index:2;
+  font-size:30px;line-height:44px;padding:0;display:flex;align-items:center;justify-content:center}
+#lb .btn:hover{background:rgba(255,255,255,.22)}
+#lb .nav{position:absolute;top:50%;transform:translateY(-50%)}
+#lb .prev{left:10px}#lb .next{right:10px}
+#lb .strip{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;gap:6px;align-items:center;
+  overflow-x:auto;padding:0 12px;scrollbar-width:none}
+#lb .strip::-webkit-scrollbar{display:none}
+#lb .strip img{width:44px;height:44px;border-radius:6px;object-fit:cover;opacity:.5;cursor:pointer;flex:none;box-shadow:none;border:3px solid transparent;transition:transform .15s}
+#lb .strip img.on{opacity:1;border-color:var(--accent);transform:scale(1.12)}
+#lb .day{flex:none;color:#999;font-size:11px;padding:0 4px;text-transform:uppercase;letter-spacing:.05em}
+
+@media (max-width:640px){
+  #info{padding:10px 12px;top:8px;left:8px}
+  #info h1{font-size:16px}
+  #info .sub{margin-bottom:6px}
+  #info .stats{gap:14px}
+  #info .stat b{font-size:15px}
+  #info .legend{display:none}
+  #info .play{margin-top:8px;padding:8px}
+  #prof{left:8px;right:8px;bottom:8px;height:112px}
+  #prof svg{height:76px}
+  .leaflet-bottom{bottom:126px}
+  #lb .stage{inset:52px 0 64px}
+  #lb .nav{width:38px;height:38px;background:rgba(0,0,0,.45)}
+  #lb .prev{left:6px}#lb .next{right:6px}
+  .ph{width:40px;height:40px}
+}
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Map of the route"></div>
+
+<div id="info">
+  <h1>Mullerthal Trail · Route 2</h1>
+  <div class="sub">Luxembourg · 27–28 August 2026 · loop from Echternach</div>
+  <div class="stats">
+    <div class="stat"><b id="sDist">–</b><span>km</span></div>
+    <div class="stat"><b id="sGain">–</b><span>m ascent</span></div>
+    <div class="stat"><b id="sPh">–</b><span>photos</span></div>
+  </div>
+  <div class="legend"><span><i style="background:#fc5200"></i>Day 1</span><span><i style="background:#c2185b"></i>Day 2</span></div>
+  <button class="play" id="playAll">View photos in order ▸</button>
+</div>
+
+<div id="prof">
+  <div class="hd"><span>Elevation <span class="rd" id="rd"></span></span><button id="pToggle" aria-label="Collapse elevation profile">▾</button></div>
+  <svg id="psvg" preserveAspectRatio="none"></svg>
+</div>
+
+<div id="lb" aria-modal="true" role="dialog">
+  <div class="top"><div class="cap" id="cap"></div><button class="btn" id="lbClose" aria-label="Close">✕</button></div>
+  <div class="stage" id="stage"></div>
+  <button class="btn nav prev" id="lbPrev" aria-label="Previous">‹</button>
+  <button class="btn nav next" id="lbNext" aria-label="Next">›</button>
+  <div class="strip" id="strip"></div>
+</div>
+
+<script src="lib/leaflet.js"></script>
+<script src="lib/leaflet.markercluster.js"></script>
+<script src="data.js"></script>
+<script>
+(function(){
+const T = window.TRACK;   // [lat, lon, ele, distM, day]
+const M = window.MEDIA;   // ordered by time
+const C1 = '#fc5200', C2 = '#c2185b';
+
+/* ---------- stats ---------- */
+const totalKm = T[T.length-1][3]/1000;
+let gain = 0, ref = T[0][2];
+for (const p of T){ if (p[2]-ref > 5){ gain += p[2]-ref; ref = p[2]; } else if (p[2] < ref) ref = p[2]; }
+document.getElementById('sDist').textContent = totalKm.toFixed(1);
+document.getElementById('sGain').textContent = Math.round(gain/10)*10;
+document.getElementById('sPh').textContent = M.length;
+
+/* ---------- map ---------- */
+const map = L.map('map', {zoomControl:false, preferCanvas:false});
+L.control.zoom({position:'topright'}).addTo(map);
+const layers = {
+  'Map': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}),
+  'Topo': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      {maxZoom:17, attribution:'© OpenStreetMap, SRTM | © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'}),
+  'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {maxZoom:19, attribution:'Imagery © Esri, Maxar, Earthstar Geographics'})
+};
+layers['Map'].addTo(map);
+L.control.layers(layers, null, {position:'topright'}).addTo(map);
+L.control.scale({imperial:false, position:'bottomleft'}).addTo(map);
+
+// one continuous loop: day 2 line starts from the last point of day 1
+const d1 = T.filter(p=>p[4]===1).map(p=>[p[0],p[1]]);
+const d2 = [d1[d1.length-1]].concat(T.filter(p=>p[4]===2).map(p=>[p[0],p[1]]));
+const all = d1.concat(d2);
+L.polyline(all, {color:'#fff', weight:8, opacity:.9, interactive:false}).addTo(map);
+L.polyline(d1, {color:C1, weight:4.5, opacity:1, interactive:false}).addTo(map);
+L.polyline(d2, {color:C2, weight:4.5, opacity:1, interactive:false}).addTo(map);
+
+const pin = (c,title) => L.marker(c, {icon:L.divIcon({className:'wrap', html:`<div class="pin" style="background:${title[1]}"></div>`, iconSize:[16,16]}), title:title[0], keyboard:false, zIndexOffset:-100});
+pin(all[0], ['Start / finish · Echternach', '#2e9d4f']).addTo(map).bindTooltip('Start / finish · Echternach');
+pin(d1[d1.length-1], ['End of day 1', '#444']).addTo(map).bindTooltip('End of day 1 · overnight');
+
+const fitAll = () => {
+  const info=document.getElementById('info').getBoundingClientRect(), ph=document.getElementById('prof').offsetHeight;
+  const wide = innerWidth > 700;
+  map.fitBounds(L.latLngBounds(all), wide
+    ? {paddingTopLeft:[info.right+20, 30], paddingBottomRight:[60, ph+40]}
+    : {paddingTopLeft:[16, info.bottom+16], paddingBottomRight:[16, ph+30]});
+};
+fitAll();
+
+/* ---------- photo markers ---------- */
+const thumb = m => `media/${m.id}_t.jpg`;
+const cluster = L.markerClusterGroup({
+  maxClusterRadius: 44, showCoverageOnHover:false, spiderfyOnMaxZoom:true, zoomToBoundsOnClick:false,
+  disableClusteringAtZoom: 19,
+  iconCreateFunction(c){
+    const ms = c.getAllChildMarkers().map(k=>k.options.idx).sort((a,b)=>a-b);
+    return L.divIcon({className:'wrap', iconSize:[46,46],
+      html:`<div class="ph" style="background-image:url(${thumb(M[ms[0]])})"><span class="n">${ms.length}</span></div>`});
+  }
+});
+const markers = M.map((m,i)=>{
+  const mk = L.marker([m.lat,m.lon], {idx:i, title:`${m.type==='video'?'Video':'Photo'} · Day ${m.day} ${m.time}`,
+    icon:L.divIcon({className:'wrap', iconSize:[46,46], html:`<div class="ph${m.type==='video'?' vid':''}" style="background-image:url(${thumb(m)})"></div>`})});
+  mk.on('click', ()=>openLB(i));
+  return mk;
+});
+cluster.addLayers(markers);
+cluster.on('clusterclick', e=>{
+  const c = e.layer, z = map.getZoom();
+  const ms = c.getAllChildMarkers().map(k=>k.options.idx).sort((a,b)=>a-b);
+  const b = c.getBounds();
+  // tight group (same spot) or already zoomed in: open the viewer at its first photo
+  if (z >= 16 || map.getBoundsZoom(b) <= z || b.getNorthEast().distanceTo(b.getSouthWest()) < 40) openLB(ms[0]);
+  else map.fitBounds(b, {padding:[60,60], maxZoom:17});
+});
+map.addLayer(cluster);
+
+/* ---------- elevation profile ---------- */
+const svg = document.getElementById('psvg'), NS='http://www.w3.org/2000/svg';
+const prof = document.getElementById('prof'), rd = document.getElementById('rd');
+let minE=Infinity,maxE=-Infinity; for(const p of T){minE=Math.min(minE,p[2]);maxE=Math.max(maxE,p[2]);}
+minE = Math.floor((minE-10)/50)*50; maxE = Math.ceil((maxE+10)/50)*50;
+const totalM = T[T.length-1][3];
+let hoverMk = null;
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function drawProfile(){
+  const W = svg.clientWidth || 800, H = svg.clientHeight || 92, P = 26;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML='';
+  const x = d => P + (d/totalM)*(W-P-4), y = e => 4 + (1-(e-minE)/(maxE-minE))*(H-18);
+  for (let e=minE; e<=maxE; e+=100){ svg.append(el('line',{x1:P,x2:W,y1:y(e),y2:y(e),stroke:'rgba(0,0,0,.07)'}));
+    const t=el('text',{x:0,y:y(e)+3,'font-size':9,fill:'#888'}); t.textContent=e; svg.append(t); }
+  for (const day of [1,2]){
+    let pts = T.filter(p=>p[4]===day); if(day===2) pts=[T.filter(p=>p[4]===1).pop()].concat(pts);
+    const step = Math.max(1, Math.floor(pts.length/(W*1.5)));
+    let d=`M${x(pts[0][3])},${H-14}`; for(let i=0;i<pts.length;i+=step) d+=`L${x(pts[i][3]).toFixed(1)},${y(pts[i][2]).toFixed(1)}`;
+    d+=`L${x(pts[pts.length-1][3])},${y(pts[pts.length-1][2])}L${x(pts[pts.length-1][3])},${H-14}Z`;
+    svg.append(el('path',{d,fill:day===1?C1:C2,'fill-opacity':.18,stroke:day===1?C1:C2,'stroke-width':1.5}));
+  }
+  for (let k=0;k<=Math.floor(totalM/1000);k+=5){ const t=el('text',{x:x(k*1000),y:H-2,'font-size':9,fill:'#888','text-anchor':'middle'}); t.textContent=k+' km'; svg.append(t); }
+  M.forEach((m,i)=>{ const c=el('circle',{cx:x(m.km*1000),cy:H-14,r:2.6,fill:m.type==='video'?C2:'#333',opacity:.55}); svg.append(c); });
+  svg._x=x; svg._y=y; svg._W=W; svg._P=P;
+  svg.append(svg._cur = el('line',{y1:0,y2:H-14,stroke:'#333','stroke-width':1,opacity:0}));
+}
+function nearestByDist(d){ let lo=0,hi=T.length-1; while(hi-lo>1){const m=(lo+hi)>>1; if(T[m][3]<d) lo=m; else hi=m;} return T[hi]; }
+function profMove(ev){
+  const r = svg.getBoundingClientRect(), cx = (ev.touches?ev.touches[0].clientX:ev.clientX) - r.left;
+  const d = Math.max(0,Math.min(totalM, (cx*svg._W/r.width - svg._P)/(svg._W-svg._P-4)*totalM));
+  const p = nearestByDist(d);
+  svg._cur.setAttribute('x1',svg._x(p[3])); svg._cur.setAttribute('x2',svg._x(p[3])); svg._cur.setAttribute('opacity',.6);
+  rd.textContent = `· km ${(p[3]/1000).toFixed(1)} · ${Math.round(p[2])} m · day ${p[4]}`;
+  if(!hoverMk) hoverMk = L.marker([p[0],p[1]],{icon:L.divIcon({className:'wrap',html:'<div class="hover-dot"></div>',iconSize:[14,14]}),interactive:false,zIndexOffset:1000}).addTo(map);
+  else hoverMk.setLatLng([p[0],p[1]]);
+  if(!map.getBounds().pad(-0.05).contains([p[0],p[1]])) map.panTo([p[0],p[1]],{animate:false});
+}
+function profLeave(){ if(hoverMk){map.removeLayer(hoverMk);hoverMk=null;} rd.textContent=''; svg._cur&&svg._cur.setAttribute('opacity',0); }
+svg.addEventListener('mousemove',profMove); svg.addEventListener('mouseleave',profLeave);
+svg.addEventListener('touchstart',profMove,{passive:true}); svg.addEventListener('touchmove',profMove,{passive:true}); svg.addEventListener('touchend',profLeave);
+document.getElementById('pToggle').onclick = ()=>{
+  const min = prof.classList.toggle('min'); document.body.classList.toggle('pmin',min);
+  document.getElementById('pToggle').textContent = min?'▴':'▾';
+};
+drawProfile(); addEventListener('resize', ()=>{ clearTimeout(drawProfile._t); drawProfile._t=setTimeout(drawProfile,100); });
+
+/* ---------- lightbox ---------- */
+const lb=document.getElementById('lb'), stage=document.getElementById('stage'), cap=document.getElementById('cap'), strip=document.getElementById('strip');
+let cur=-1, stripBuilt=false;
+function buildStrip(){
+  let lastDay=0;
+  M.forEach((m,i)=>{
+    if(m.day!==lastDay){ const s=document.createElement('span'); s.className='day'; s.textContent='Day '+m.day; strip.append(s); lastDay=m.day; }
+    const im=new Image(); im.loading='lazy'; im.src=thumb(m); im.alt=''; im.onclick=()=>show(i); strip.append(im); m._s=im;
+  });
+  stripBuilt=true;
+}
+function show(i){
+  cur=(i+M.length)%M.length; const m=M[cur];
+  stage.innerHTML='';
+  if(m.type==='video'){
+    const v=document.createElement('video'); v.src=`media/${m.id}.mp4`; v.poster=`media/${m.id}.jpg`;
+    v.controls=true; v.autoplay=true; v.playsInline=true; stage.append(v);
+  } else {
+    const lo=new Image(); lo.src=thumb(m); lo.className='ph-lo';
+    lo.style.aspectRatio=`${m.w}/${m.h}`; lo.style.height='100%'; lo.style.objectFit='cover';
+    stage.append(lo);
+    const hi=new Image(); hi.alt=`Photo ${cur+1}`; hi.decoding='async';
+    hi.onload=()=>{ if(M[cur]===m){ stage.innerHTML=''; stage.append(hi); } };
+    hi.src=`media/${m.id}.jpg`;
+    // preload neighbours
+    [1,-1].forEach(o=>{ const n=M[(cur+o+M.length)%M.length]; if(n.type==='photo') new Image().src=`media/${n.id}.jpg`; });
+  }
+  cap.innerHTML=`<b>Day ${m.day}</b> · ${m.time} · km ${m.km.toFixed(1)}${m.est?' · position approx.':''} &nbsp;<span style="opacity:.6">${cur+1} / ${M.length}</span>`;
+  strip.querySelectorAll('img.on').forEach(e=>e.classList.remove('on'));
+  if(m._s){ m._s.classList.add('on'); m._s.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }
+  highlight(cur);
+}
+let activeEl=null;
+function highlight(i){
+  if(activeEl) activeEl.classList.remove('active');
+  const mk=markers[i]; const parent=cluster.getVisibleParent(mk);
+  map.setView([M[i].lat,M[i].lon], Math.max(map.getZoom(),15), {animate:false});
+  const vis = cluster.getVisibleParent(mk) || parent;
+  activeEl = vis && vis._icon ? vis._icon.querySelector('.ph') : null;
+  if(activeEl) activeEl.classList.add('active');
+}
+function openLB(i){ if(!stripBuilt) buildStrip(); lb.classList.add('open'); show(i); }
+function closeLB(){ lb.classList.remove('open'); stage.innerHTML=''; if(cur>=0){ const vis=cluster.getVisibleParent(markers[cur]); activeEl=vis&&vis._icon?vis._icon.querySelector('.ph'):null; activeEl&&activeEl.classList.add('active'); } }
+document.getElementById('lbClose').onclick=closeLB;
+document.getElementById('lbPrev').onclick=()=>show(cur-1);
+document.getElementById('lbNext').onclick=()=>show(cur+1);
+document.getElementById('playAll').onclick=()=>openLB(0);
+stage.addEventListener('click',e=>{ if(e.target===stage) closeLB(); });
+addEventListener('keydown',e=>{ if(!lb.classList.contains('open')) return;
+  if(e.key==='Escape') closeLB(); else if(e.key==='ArrowRight') show(cur+1); else if(e.key==='ArrowLeft') show(cur-1); });
+let tx=null, ty=null;
+stage.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+stage.addEventListener('touchend',e=>{ if(tx===null) return; const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)) show(cur+(dx<0?1:-1)); else if(dy>90) closeLB(); tx=null; },{passive:true});
+})();
+</script>
+</body>
+</html>
